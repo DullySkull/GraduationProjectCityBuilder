@@ -1,0 +1,45 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "PCGEx + Zone Graph",
+	"Description": "PCG Extended Toolkit Interop with Zone Graph plugin.",
+	"Category": "PCG",
+	"CreatedBy": "Timothé Lapetite",
+	"CreatedByURL": "https://github.com/Nebukam/PCGExElementsZoneGraph",
+	"DocsURL": "https://nebukam.github.io/PCGExElementsZoneGraph/",
+	"MarketplaceURL": "",
+	"SupportURL": "https://discord.gg/mde2vC5gbE",
+	"EngineVersion": "5.7.0",
+	"CanContainContent": true,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "PCGExElementsZoneGraph",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"IOS",
+				"Android",
+				"Linux",
+				"LinuxArm64"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "PCG",
+			"Enabled": true
+		},
+		{
+			"Name": "PCGExtendedToolkit",
+			"Enabled": true
+		},
+		{
+			"Name": "ZoneGraph",
+			"Enabled": true
+		}
+	]
+}
