@@ -4,9 +4,14 @@
 #include "WFCData.generated.h"
 
 UENUM(BlueprintType)
-enum class ERoadDirection : uint8
+enum class ERoadType : uint8
 {
-	North, East, South, West
+	Empty,
+	DeadEnd,
+	Straight,
+	Corner,
+	TJunction,
+	Cross
 };
 
 USTRUCT(BlueprintType)
@@ -27,11 +32,11 @@ struct FRoadTile
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WFC")
 	bool bIsEast = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WFC")
+	ERoadType RoadType = ERoadType::Empty;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WFC")
 	int32 Rotation = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WFC")
 	bool bRoad = false;
-	
-	// Maybe switch state to give each case direction
 };
 
 USTRUCT(BlueprintType)
@@ -61,10 +66,6 @@ struct FWFCell
 	bool bCollapsed = false;
 	TArray<int32> Tiles;
 	int32 ChosenTile = -1;
-	int32 GetEntropy() const
-	{
-		return bCollapsed ? 0 : Tiles.Num();
-	}
 };
 
 USTRUCT(BlueprintType)
@@ -88,5 +89,11 @@ struct FRoadCellResult
 	bool bIsRoad = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WFC")
+	ERoadType RoadType = ERoadType::Empty;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WFC")
 	FVector WorldLocation = FVector::ZeroVector;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WFC")
+	FTransform WorldTransform = FTransform::Identity;
 };

@@ -18,7 +18,8 @@ public class CityBuilder : ModuleRules
 			"StateTreeModule",
 			"GameplayStateTreeModule",
 			"UMG",
-			"Slate"
+			"Slate",
+			"PCG"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
