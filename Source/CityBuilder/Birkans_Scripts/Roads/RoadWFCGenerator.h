@@ -55,7 +55,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UBoxComponent* PCGBoundsBox;
 
-	// WFC Settings
+	// Grid Settings
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WFC")
 	int32 Width = 100;
 
