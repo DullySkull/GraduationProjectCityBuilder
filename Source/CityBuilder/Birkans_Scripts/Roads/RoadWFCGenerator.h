@@ -29,7 +29,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "WFC")
 	TArray<FRoadCellResult> GetOnlyRoadCells() const;
 
-	UFUNCTION(BlueprintCallable, Category = "WFC")
+		UFUNCTION(BlueprintCallable, Category = "WFC")
 	TArray<FVector> GetRoadPoints() const;
 
 	UFUNCTION(BlueprintCallable, Category = "WFC")
