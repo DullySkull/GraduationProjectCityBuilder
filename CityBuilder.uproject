@@ -52,6 +52,10 @@
 		{
 			"Name": "PCGGeometryScriptInterop",
 			"Enabled": true
+		},
+		{
+			"Name": "Traffic",
+			"Enabled": true
 		}
 	]
 }
