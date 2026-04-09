@@ -19,6 +19,7 @@ public class CityBuilder : ModuleRules
 			"GameplayStateTreeModule",
 			"UMG",
 			"Slate",
+			"SlateCore",
 			"PCG"
 		});
 
