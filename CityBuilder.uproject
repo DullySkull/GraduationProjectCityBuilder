@@ -56,6 +56,18 @@
 		{
 			"Name": "Traffic",
 			"Enabled": true
+		},
+		{
+			"Name": "GameplayBehaviorSmartObjects",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayBehaviors",
+			"Enabled": true
+		},
+		{
+			"Name": "AgentIntegrationKit",
+			"Enabled": true
 		}
 	]
 }

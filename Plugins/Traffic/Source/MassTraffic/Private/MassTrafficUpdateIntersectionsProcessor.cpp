@@ -470,16 +470,6 @@ void UMassTrafficUpdateIntersectionsProcessor::ConfigureQueries(const TSharedRef
 
 void UMassTrafficUpdateIntersectionsProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
-	// This will skip intersection logic if there are no vehicles that would use the intersections.
-	// This does mean they won't proceed through their cycles visually either, but that's okay
-	// for this demo as the only time there are no cars is in the cinematic.
-
-	UMassTrafficSubsystem& MassTrafficSubsystem = Context.GetMutableSubsystemChecked<UMassTrafficSubsystem>();
-	if (!MassTrafficSubsystem.HasTrafficVehicleAgents())
-	{
-		return;
-	}
-	
 	// Get world
 	const UWorld* World = GetWorld();
 
