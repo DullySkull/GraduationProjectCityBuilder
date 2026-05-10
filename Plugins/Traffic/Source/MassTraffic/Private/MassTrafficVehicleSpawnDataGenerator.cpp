@@ -308,7 +308,10 @@ bool UMassTrafficVehicleSpawnDataGenerator::FindNonOverlappingLanePoints(
 			const FMassTrafficVehicleSpacing& VehicleTypeSpacing = Spacings[I];
 			
 			const float Fraction = VehicleTypeSpacing.Proportion / ProportionsTotal;
-			OutSpawnPointsPerSpacing[I].Reserve(TotalLaneLength / VehicleTypeSpacing.Space * Fraction);
+			const float ReserveCountFloat = TotalLaneLength / VehicleTypeSpacing.Space * Fraction;
+			OutSpawnPointsPerSpacing[I].Reserve(
+				FMath::IsFinite(ReserveCountFloat) ? FMath::Max(0, FMath::RoundToInt(ReserveCountFloat)) : 0
+			);
 		}
 	}
 	
