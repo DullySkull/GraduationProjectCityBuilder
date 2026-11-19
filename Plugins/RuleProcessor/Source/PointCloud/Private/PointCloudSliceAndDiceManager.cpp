@@ -271,8 +271,8 @@ bool ASliceAndDiceManager::DeleteManagedActorHandles(const TArray<FActorInstance
 
 	// Finally, save the LWI managers that have changed
 #if WITH_EDITOR
-	TSet<ALightWeightInstanceManager*> LWIManagersToSave = SliceAndDiceManagedActorsHelpers::ToLWIManagerSet(ActorHandlesToDelete);
-	for (ALightWeightInstanceManager* LWIManager : LWIManagersToSave)
+	TSet<ADEPRECATED_LightWeightInstanceManager*> LWIManagersToSave = SliceAndDiceManagedActorsHelpers::ToLWIManagerSet(ActorHandlesToDelete);
+	for (ADEPRECATED_LightWeightInstanceManager* LWIManager : LWIManagersToSave)
 	{
 		if (LWIManager && LWIManager->GetExternalPackage())
 		{
@@ -570,9 +570,9 @@ bool ASliceAndDiceManager::RunOnMappings(const TArray<USliceAndDiceMapping*>& Se
 
 			// Add LWI manager(s) affected to checkout
 			TArray<FActorInstanceHandle> CurrentActorInstances = SliceAndDiceManagedActorsHelpers::ToActorHandleList(ActorEntries);
-			TSet<ALightWeightInstanceManager*> LWIManagersToCheckout = SliceAndDiceManagedActorsHelpers::ToLWIManagerSet(CurrentActorInstances);
+			TSet<ADEPRECATED_LightWeightInstanceManager*> LWIManagersToCheckout = SliceAndDiceManagedActorsHelpers::ToLWIManagerSet(CurrentActorInstances);
 
-			for (ALightWeightInstanceManager* LWIManager : LWIManagersToCheckout)
+			for (ADEPRECATED_LightWeightInstanceManager* LWIManager : LWIManagersToCheckout)
 			{
 				if (LWIManager)
 				{

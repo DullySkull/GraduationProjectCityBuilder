@@ -146,9 +146,9 @@ void FSliceAndDiceExecutionContext::PostExecute(FPointCloudRuleInstance* InRule)
 		}
 
 		TArray<FActorInstanceHandle> GeneratedActorHandles = SliceAndDiceManagedActorsHelpers::ToActorHandleList(NewActorMappings);
-		TSet<ALightWeightInstanceManager*> LWIManagersToSave = SliceAndDiceManagedActorsHelpers::ToLWIManagerSet(GeneratedActorHandles);
+		TSet<ADEPRECATED_LightWeightInstanceManager*> LWIManagersToSave = SliceAndDiceManagedActorsHelpers::ToLWIManagerSet(GeneratedActorHandles);
 
-		for (ALightWeightInstanceManager* LWIManager : LWIManagersToSave)
+		for (ADEPRECATED_LightWeightInstanceManager* LWIManager : LWIManagersToSave)
 		{
 			if (LWIManager && LWIManager->GetExternalPackage())
 			{

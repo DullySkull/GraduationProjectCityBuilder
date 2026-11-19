@@ -88,5 +88,5 @@ namespace SliceAndDiceManagedActorsHelpers
 
 	POINTCLOUD_API TArray<FActorInstanceHandle> ToActorHandleList(const TArray<FSliceAndDiceActorMapping>& ActorMappings, bool bValidOnly = false);
 	POINTCLOUD_API TArray<FActorInstanceHandle> ToActorHandleList(const TArray<FSliceAndDiceManagedActorsEntry>& ManagedActors, bool bValidOnly = false);
-	POINTCLOUD_API TSet<ALightWeightInstanceManager*> ToLWIManagerSet(const TArray<FActorInstanceHandle>& InActorHandles);
+	POINTCLOUD_API TSet<ADEPRECATED_LightWeightInstanceManager*> ToLWIManagerSet(const TArray<FActorInstanceHandle>& InActorHandles);
 }

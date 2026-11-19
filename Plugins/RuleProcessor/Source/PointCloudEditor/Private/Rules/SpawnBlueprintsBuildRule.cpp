@@ -244,7 +244,7 @@ bool FSpawnBlueprintsBuildRuleInstance::Execute(FSliceAndDiceExecutionContextPtr
 
 			if (Data.bUseLightweightInstancing)
 			{
-				ActorHandle = ULightWeightInstanceBlueprintFunctionLibrary::CreateNewLightWeightInstance(SpawnClass, Position, DataLayers.Num() > 0 ? DataLayers[0] : nullptr, Data.World);
+				ActorHandle = UDEPRECATED_LightWeightInstanceBlueprintFunctionLibrary::CreateNewLightWeightInstance(SpawnClass, Position, DataLayers.Num() > 0 ? DataLayers[0] : nullptr, Data.World);
 			}
 			else
 			{

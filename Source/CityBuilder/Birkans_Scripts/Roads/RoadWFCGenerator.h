@@ -5,7 +5,10 @@
 #include "WFCData.h"
 #include "PCGComponent.h"
 #include "Components/BoxComponent.h"
+#include "ZoneGraphTypes.h"
 #include "RoadWFCGenerator.generated.h"
+
+class UZoneShapeComponent;
 
 UCLASS()
 class CITYBUILDER_API ARoadWFCGenerator : public AActor
@@ -96,6 +99,33 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PCG")
 	bool bUseImmediatePCGCleanup = true;
 
+	// ZoneGraph lanes for Mass traffic and crowds. Built in the editor only; the ZoneGraph data is baked into the level.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zone Lanes")
+	bool bGenerateZoneLanes = true;
+
+	UPROPERTY(EditAnywhere, Category = "Zone Lanes")
+	FZoneLaneProfileRef VehicleLaneProfile;
+
+	UPROPERTY(EditAnywhere, Category = "Zone Lanes")
+	FZoneLaneProfileRef CrowdLaneProfile;
+
+	// Distance from the road centre line to the sidewalk lane.
+	UPROPERTY(EditAnywhere, Category = "Zone Lanes")
+	float SidewalkOffset = 500.0f;
+
+	// Tags match the lane filters in Config/DefaultPlugins.ini (MassTrafficSettings / MassCrowdSettings).
+	UPROPERTY(EditAnywhere, Category = "Zone Lanes")
+	FZoneGraphTagMask RoadTags = FZoneGraphTagMask(1u << 3);
+
+	UPROPERTY(EditAnywhere, Category = "Zone Lanes")
+	FZoneGraphTagMask IntersectionTags = FZoneGraphTagMask((1u << 3) | (1u << 6) | (1u << 15));
+
+	UPROPERTY(EditAnywhere, Category = "Zone Lanes")
+	FZoneGraphTagMask CrosswalkTags = FZoneGraphTagMask(1u << 9);
+
+	UPROPERTY()
+	TArray<TObjectPtr<UZoneShapeComponent>> ZoneLaneComponents;
+
 	UPROPERTY(BlueprintReadOnly, Category = "WFC")
 	TArray<FRoadCellResult> RoadResults;
 	
@@ -110,6 +140,11 @@ protected:
 	void SeedRoadSkeleton();
 	void BuildResults();
 	void ClearRoad();
+
+	// Zone lanes
+	void RebuildZoneLanes();
+	void ClearZoneLanes();
+	void AddZoneShape(FZoneShapeType Type, const FZoneLaneProfileRef& Profile, FZoneGraphTagMask Tags, TArray<FZoneShapePoint>&& Points);
 
 	// Grid helpers
 	int32 GetIndex(int32 X, int32 Y) const;

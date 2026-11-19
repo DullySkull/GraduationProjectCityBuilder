@@ -20,7 +20,9 @@ public class CityBuilder : ModuleRules
 			"UMG",
 			"Slate",
 			"SlateCore",
-			"PCG"
+			"PCG",
+			"ZoneGraph",
+			"GeometryCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

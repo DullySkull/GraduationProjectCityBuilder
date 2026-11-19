@@ -81,11 +81,7 @@ bool FPCGRoadElement::ExecuteInternal(FPCGContext* Context) const
 
 	for (const FRoadCellResult& Cell : AllCells)
 	{
-		if (!Cell.bIsRoad)
-		{
-			continue;
-		}
-
+		// Empty = non-road cells (city blocks), so the graph can place buildings, parks and parking there.
 		if (Cell.RoadType != Settings->RoadType)
 		{
 			continue;

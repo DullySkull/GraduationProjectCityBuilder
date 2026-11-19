@@ -40,6 +40,7 @@ public class MassTrafficEditor : ModuleRules
 				"GameplayTasks",
 				"MassCommon",
 				"MassEntity",
+				"MassCore",
 				"RenderCore",
 				"RHI",
 				"Blutility",

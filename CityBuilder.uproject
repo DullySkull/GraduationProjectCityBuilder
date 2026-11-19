@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.7",
+	"EngineAssociation": "5.8",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -38,10 +38,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "MassEntity",
-			"Enabled": true
-		},
-		{
 			"Name": "MassCrowd",
 			"Enabled": true
 		},
@@ -58,6 +54,10 @@
 			"Enabled": true
 		},
 		{
+			"Name": "ZoneGraph",
+			"Enabled": true
+		},
+		{
 			"Name": "GameplayBehaviorSmartObjects",
 			"Enabled": true
 		},
@@ -66,8 +66,19 @@
 			"Enabled": true
 		},
 		{
-			"Name": "AgentIntegrationKit",
+			"Name": "ModelContextProtocol",
 			"Enabled": true
+		},
+		{
+			"Name": "AllToolsets",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		},
+		{
+			"Name": "PCGExElementsZoneGraph",
+			"Enabled": false
 		}
 	]
 }

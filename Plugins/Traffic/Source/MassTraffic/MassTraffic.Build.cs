@@ -26,6 +26,7 @@ public class MassTraffic : ModuleRules
 			{
 				// Mass core
 				"MassEntity",
+				"MassCore",
 
 				// AI/MassAI Plugin Modules
 				"MassAIBehavior",

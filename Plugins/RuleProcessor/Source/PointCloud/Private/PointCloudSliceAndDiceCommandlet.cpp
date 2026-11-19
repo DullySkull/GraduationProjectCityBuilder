@@ -311,9 +311,9 @@ void USliceAndDiceCommandlet::GatherActors(UWorld* World, ASliceAndDiceManager* 
 
 		// Add LWI manager(s)
 		TArray<FActorInstanceHandle> ActorHandles = SliceAndDiceManagedActorsHelpers::ToActorHandleList(ActorEntries);
-		TSet<ALightWeightInstanceManager*> LWIManagersToCheckout = SliceAndDiceManagedActorsHelpers::ToLWIManagerSet(ActorHandles);
+		TSet<ADEPRECATED_LightWeightInstanceManager*> LWIManagersToCheckout = SliceAndDiceManagedActorsHelpers::ToLWIManagerSet(ActorHandles);
 
-		for (ALightWeightInstanceManager* LWIManager : LWIManagersToCheckout)
+		for (ADEPRECATED_LightWeightInstanceManager* LWIManager : LWIManagersToCheckout)
 		{
 			if (LWIManager)
 			{

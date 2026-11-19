@@ -80,9 +80,9 @@ namespace SliceAndDiceManagedActorsHelpers
 		return List;
 	}
 
-	TSet<ALightWeightInstanceManager*> ToLWIManagerSet(const TArray<FActorInstanceHandle>& InActorHandles)
+	TSet<ADEPRECATED_LightWeightInstanceManager*> ToLWIManagerSet(const TArray<FActorInstanceHandle>& InActorHandles)
 	{
-		TSet<ALightWeightInstanceManager*> LWIManagers;
+		TSet<ADEPRECATED_LightWeightInstanceManager*> LWIManagers;
 
 		for (const FActorInstanceHandle& ActorInstanceHandle : InActorHandles)
 		{

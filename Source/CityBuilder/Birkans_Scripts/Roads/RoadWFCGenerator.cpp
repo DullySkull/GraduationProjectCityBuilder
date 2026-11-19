@@ -1,6 +1,8 @@
 #include "RoadWFCGenerator.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
+#include "ZoneShapeComponent.h"
+#include "ZoneGraphSettings.h"
 
 ARoadWFCGenerator::ARoadWFCGenerator()
 {
@@ -16,6 +18,20 @@ ARoadWFCGenerator::ARoadWFCGenerator()
 	PCGBoundsBox->SetBoxExtent(FVector(1500.f, 1500.f, 500.f));
 
 	Tags.AddUnique(FName("WFCRoadGenerator"));
+
+	// Default to the project's "Vehicle" and "Crowd" lane profiles (Config/DefaultPlugins.ini).
+	for (const FZoneLaneProfile& Profile : GetDefault<UZoneGraphSettings>()->GetLaneProfiles())
+	{
+		const FString ProfileName = Profile.Name.ToString();
+		if (!VehicleLaneProfile.ID.IsValid() && ProfileName.Contains(TEXT("Vehicle")))
+		{
+			VehicleLaneProfile = FZoneLaneProfileRef(Profile);
+		}
+		if (!CrowdLaneProfile.ID.IsValid() && ProfileName.Contains(TEXT("Crowd")))
+		{
+			CrowdLaneProfile = FZoneLaneProfileRef(Profile);
+		}
+	}
 }
 
 void ARoadWFCGenerator::BeginPlay()
@@ -60,6 +76,12 @@ void ARoadWFCGenerator::GenerateRoadsInternal(bool bShouldRefreshPCG)
 	ConvertRoadMaskToCollapsedGrid();
 	BuildResults();
 
+	// Lanes are only built in the editor; a game world regenerates the same seed, so the baked ZoneGraph still matches.
+	if (GetWorld() && !GetWorld()->IsGameWorld())
+	{
+		RebuildZoneLanes();
+	}
+
 	if (PCGBoundsBox)
 	{
 		const float HalfW = (Width * CellSize) * 0.5f;
@@ -91,12 +113,135 @@ void ARoadWFCGenerator::ClearRoads()
 		PCGComponent->CleanupLocalImmediate(true);
 	}
 
+	if (GetWorld() && !GetWorld()->IsGameWorld())
+	{
+		ClearZoneLanes();
+	}
+
 #if WITH_EDITOR
 	if (GetWorld())
 	{
 		FlushPersistentDebugLines(GetWorld());
 	}
 #endif
+}
+
+void ARoadWFCGenerator::ClearZoneLanes()
+{
+	for (UZoneShapeComponent* Shape : ZoneLaneComponents)
+	{
+		if (Shape)
+		{
+			RemoveInstanceComponent(Shape);
+			Shape->DestroyComponent();
+		}
+	}
+	ZoneLaneComponents.Reset();
+}
+
+void ARoadWFCGenerator::AddZoneShape(FZoneShapeType Type, const FZoneLaneProfileRef& Profile, FZoneGraphTagMask ShapeTags, TArray<FZoneShapePoint>&& Points)
+{
+	UZoneShapeComponent* Shape = NewObject<UZoneShapeComponent>(this, NAME_None, RF_Transactional);
+	Shape->CreationMethod = EComponentCreationMethod::Instance; // saved with the level
+	Shape->SetupAttachment(Root);
+	Shape->SetShapeType(Type);
+	Shape->SetCommonLaneProfile(Profile);
+	Shape->SetTags(ShapeTags);
+	Shape->GetMutablePoints() = MoveTemp(Points);
+	Shape->UpdateShape();
+	AddInstanceComponent(Shape);
+	Shape->RegisterComponent();
+	ZoneLaneComponents.Add(Shape);
+}
+
+void ARoadWFCGenerator::RebuildZoneLanes()
+{
+	ClearZoneLanes();
+
+	if (!bGenerateZoneLanes)
+	{
+		return;
+	}
+
+	const float Half = CellSize * 0.5f;
+
+	auto MakePoint = [](const FVector& Position, const FVector& Forward, FZoneShapePointType PointType, float TangentLength = 0.0f)
+	{
+		FZoneShapePoint Point(Position);
+		Point.Type = PointType;
+		Point.TangentLength = TangentLength;
+		Point.SetRotationFromForwardAndUp(Forward, FVector::UpVector);
+		return Point;
+	};
+
+	for (const FRoadCellResult& Cell : RoadResults)
+	{
+		const FRoadTile* Tile = Cell.bIsRoad ? GetTileById(Cell.TileId) : nullptr;
+		if (!Tile || Cell.RoadType == ERoadType::DeadEnd)
+		{
+			// shortcut: dead ends get no lanes (cars would get stuck), keep bAllowDeadEnds off for traffic maps.
+			continue;
+		}
+
+		// Local space of the generator (components are attached to Root at identity). N=+Y, S=-Y, E=+X, W=-X.
+		const FVector Center(Cell.GridCoord.X * CellSize, Cell.GridCoord.Y * CellSize, 0.0f);
+		TArray<FVector> Sides; // counter-clockwise so polygon winding is consistent
+		if (Tile->bIsEast)  Sides.Add(FVector(1, 0, 0));
+		if (Tile->bIsNorth) Sides.Add(FVector(0, 1, 0));
+		if (Tile->bIsWest)  Sides.Add(FVector(-1, 0, 0));
+		if (Tile->bIsSouth) Sides.Add(FVector(0, -1, 0));
+
+		if (Cell.RoadType == ERoadType::Straight)
+		{
+			// Always run W->E or S->N so neighbouring straights meet start-to-end.
+			const FVector Dir = Tile->bIsEast ? FVector(1, 0, 0) : FVector(0, 1, 0);
+			const FVector Side(-Dir.Y, Dir.X, 0.0f);
+
+			AddZoneShape(FZoneShapeType::Spline, VehicleLaneProfile, RoadTags, {
+				MakePoint(Center - Dir * Half, Dir, FZoneShapePointType::Sharp),
+				MakePoint(Center + Dir * Half, Dir, FZoneShapePointType::Sharp) });
+
+			for (const float Sign : { 1.0f, -1.0f })
+			{
+				const FVector Offset = Side * SidewalkOffset * Sign;
+				AddZoneShape(FZoneShapeType::Spline, CrowdLaneProfile, FZoneGraphTagMask(), {
+					MakePoint(Center - Dir * Half + Offset, Dir, FZoneShapePointType::Sharp),
+					MakePoint(Center + Dir * Half + Offset, Dir, FZoneShapePointType::Sharp) });
+			}
+			continue;
+		}
+
+		if (Cell.RoadType == ERoadType::Corner)
+		{
+			// Curved road: enter through the first open side, leave through the second.
+			const float Tangent = Half * 0.55f;
+			AddZoneShape(FZoneShapeType::Spline, VehicleLaneProfile, RoadTags, {
+				MakePoint(Center + Sides[0] * Half, -Sides[0], FZoneShapePointType::Bezier, Tangent),
+				MakePoint(Center + Sides[1] * Half, Sides[1], FZoneShapePointType::Bezier, Tangent) });
+		}
+		else
+		{
+			// T-junction / cross: intersection polygon, picked up by MassTraffic's IntersectionLaneFilter (traffic lights).
+			TArray<FZoneShapePoint> Points;
+			for (const FVector& Dir : Sides)
+			{
+				Points.Add(MakePoint(Center + Dir * Half, -Dir, FZoneShapePointType::LaneProfile));
+			}
+			AddZoneShape(FZoneShapeType::Polygon, VehicleLaneProfile, IntersectionTags, MoveTemp(Points));
+		}
+
+		// Sidewalks meet in a crowd polygon; lanes that cross the road are tagged as crosswalks.
+		TArray<FZoneShapePoint> CrowdPoints;
+		for (const FVector& Dir : Sides)
+		{
+			const FVector Side(-Dir.Y, Dir.X, 0.0f);
+			CrowdPoints.Add(MakePoint(Center + Dir * Half - Side * SidewalkOffset, -Dir, FZoneShapePointType::LaneProfile));
+			CrowdPoints.Add(MakePoint(Center + Dir * Half + Side * SidewalkOffset, -Dir, FZoneShapePointType::LaneProfile));
+		}
+		AddZoneShape(FZoneShapeType::Polygon, CrowdLaneProfile, CrosswalkTags, MoveTemp(CrowdPoints));
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("RoadWFCGenerator: Built %d zone shapes."), ZoneLaneComponents.Num());
 }
 
 void ARoadWFCGenerator::RefreshPCG()
