@@ -33,6 +33,7 @@ public class PCGExElementsZoneGraph : ModuleRules
 				"PCGExCore",
 				"PCGExFoundations",
 				"PCGExGraphs",
+				"PCGExFilters", // filter data types moved here in PCGEx 0.79
 				"ZoneGraph",
 			}
 		);

@@ -200,6 +200,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Buildings")
 	TObjectPtr<UMaterialInterface> RoofMaterial;
 
+	/** Draw the ZoneGraph lane shapes in the editor viewport. Thousands of shapes, so off by default (the baked lanes still work). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Performance")
+	bool bShowLanesInEditor = false;
+
+	/**
+	 * Lumen sees one invisible box per building instead of every facade piece (tens of thousands).
+	 * Turn off only if you need exact per-window bounce light.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Performance")
+	bool bUseLumenBuildingProxies = true;
+
 	/** Small building details (trims, pillars) disappear beyond this distance. 0 = never. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Performance", meta = (ClampMin = "0"))
 	float DetailCullDistance = 25000.0f;
@@ -227,4 +238,7 @@ private:
 
 	/** One instanced component per mesh, rebuilt on every generate. */
 	TMap<TObjectPtr<UStaticMesh>, TObjectPtr<UHierarchicalInstancedStaticMeshComponent>> InstancedMeshes;
+
+	/** Invisible building boxes that only feed Lumen and distance fields. */
+	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> LumenProxies;
 };

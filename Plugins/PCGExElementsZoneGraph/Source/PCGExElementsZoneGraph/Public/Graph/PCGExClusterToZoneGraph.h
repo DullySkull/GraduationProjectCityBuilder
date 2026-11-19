@@ -88,7 +88,7 @@ public:
 	virtual bool SupportsEdgeSorting() const override { return DirectionSettings.RequiresSortingRules(); }
 	virtual PCGExData::EIOInit GetMainOutputInitMode() const override;
 	virtual PCGExData::EIOInit GetEdgeOutputInitMode() const override;
-	PCGEX_NODE_POINT_FILTER(FName("Break Conditions"), "Filters used to know which points are 'break' points. Use those if you want to create more polygon shapes.", PCGExFactories::ClusterNodeFilters, false)
+	PCGEX_NODE_POINT_FILTER(FName("Break Conditions"), "Filters used to know which points are 'break' points. Use those if you want to create more polygon shapes.", PCGExFactories::ClusterNodeFilters(), false)
 	//~End UPCGExPointsProcessorSettings
 
 	UPROPERTY()

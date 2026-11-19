@@ -98,6 +98,7 @@ ACityVoronoiGenerator::ACityVoronoiGenerator()
 
 	PCGComponent = CreateDefaultSubobject<UPCGComponent>(TEXT("PCGComponent"));
 	PCGComponent->GenerationTrigger = EPCGComponentGenerationTrigger::GenerateOnDemand; // generated in the editor and saved, never regenerated on play
+	PCGComponent->SetIsPartitioned(true); // parks/parking go into World Partition grid cells that stream in and out
 
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> RoadFinder(TEXT("/Game/Birkans_Folder/Art/StaticMesh/StraightRoad.StraightRoad"));
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> PlateFinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
@@ -204,6 +205,7 @@ void ACityVoronoiGenerator::ClearCity()
 	}
 	GeneratedComponents.Reset();
 	InstancedMeshes.Reset();
+	LumenProxies = nullptr;
 }
 
 void ACityVoronoiGenerator::GenerateCity()
@@ -480,6 +482,10 @@ void ACityVoronoiGenerator::GenerateCity()
 	{
 		Pair.Value->BuildTreeIfOutdated(true, true);
 	}
+	if (LumenProxies)
+	{
+		LumenProxies->BuildTreeIfOutdated(true, true);
+	}
 
 	if (GroundMesh)
 	{
@@ -487,6 +493,7 @@ void ACityVoronoiGenerator::GenerateCity()
 		UStaticMeshComponent* Ground = AddGenerated<UStaticMeshComponent>();
 		Ground->SetMobility(EComponentMobility::Static);
 		Ground->SetStaticMesh(GroundMesh);
+		Ground->SetCastShadow(false); // flat ground never shadows anything
 		Ground->SetRelativeScale3D(FVector(CitySize.X / FMath::Max(1.0, Extent.X * 2.0), CitySize.Y / FMath::Max(1.0, Extent.Y * 2.0), 1.0));
 		if (GroundMaterial)
 		{
@@ -589,6 +596,16 @@ void ACityVoronoiGenerator::AddInstance(UStaticMesh* Mesh, const FTransform& Tra
 		if (DetailCullDistance > 0.0f && bIsDetail)
 		{
 			Instances->SetCullDistances(DetailCullDistance * 0.8f, DetailCullDistance); // trims and pillars only, walls stay visible
+		}
+		const bool bIsFacade = BuildingStyles.ContainsByPredicate([Mesh](const FCityBuildingStyle& S)
+		{
+			return Mesh == S.WallMesh || Mesh == S.GroundFloorMesh || Mesh == S.TopTrimMesh || Mesh == S.CornerMesh;
+		});
+		if (bIsFacade && bUseLumenBuildingProxies)
+		{
+			// The per-building proxy boxes stand in for these pieces in Lumen's surface cache and the distance field.
+			Instances->bAffectDynamicIndirectLighting = false;
+			Instances->bAffectDistanceFieldLighting = false;
 		}
 		Instances->RegisterComponent();
 	}
@@ -697,6 +714,24 @@ void ACityVoronoiGenerator::AddBuildings(const TArray<FVector2d>& Block, FRandom
 				const FVector Extent = RoofMesh->GetBounds().BoxExtent;
 				AddInstance(RoofMesh, FTransform(FRotator(0.0, Yaw(T), 0.0), To3D(Middle, TopZ - 10.0),
 					FVector(W / (Extent.X * 2.0), D / (Extent.Y * 2.0), 20.0 / (Extent.Z * 2.0))));
+
+				if (bUseLumenBuildingProxies)
+				{
+					if (!LumenProxies)
+					{
+						LumenProxies = AddGenerated<UHierarchicalInstancedStaticMeshComponent>();
+						LumenProxies->SetMobility(EComponentMobility::Static);
+						LumenProxies->bAutoRebuildTreeOnInstanceChanges = false;
+						LumenProxies->SetStaticMesh(RoofMesh);
+						LumenProxies->SetRenderInMainPass(false); // never drawn, only lit/traced
+						LumenProxies->SetRenderInDepthPass(false);
+						LumenProxies->SetCastShadow(false);      // the facades cast the real shadows
+						LumenProxies->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+						LumenProxies->RegisterComponent();
+					}
+					LumenProxies->AddInstance(FTransform(FRotator(0.0, Yaw(T), 0.0), To3D(Middle, TopZ * 0.5),
+						FVector(W / (Extent.X * 2.0), D / (Extent.Y * 2.0), TopZ / (Extent.Z * 2.0))), false);
+				}
 			}
 
 			Cursor += W + Rand.FRandRange(0.0f, 300.0f);
@@ -712,6 +747,7 @@ void ACityVoronoiGenerator::AddZoneShape(FZoneShapeType Type, const FZoneLanePro
 	Shape->SetTags(ShapeTags);
 	Shape->GetMutablePoints() = MoveTemp(Points);
 	Shape->bIsEditorOnly = true; // lanes are baked into the level's ZoneGraphData; the game does not need the shapes
+	Shape->SetVisibility(bShowLanesInEditor);
 	Shape->UpdateShape();
 	Shape->RegisterComponent();
 }

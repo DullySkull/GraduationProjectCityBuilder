@@ -78,7 +78,7 @@
 		},
 		{
 			"Name": "PCGExElementsZoneGraph",
-			"Enabled": false
+			"Enabled": true
 		}
 	]
 }
