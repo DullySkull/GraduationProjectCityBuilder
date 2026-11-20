@@ -87,9 +87,37 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Layout", meta = (ClampMin = "0", ClampMax = "1"))
 	float Organic = 1.0f;
 
-	/** Lloyd relaxation passes: more = rounder, more even (honeycomb-like) blocks; 0-1 keeps it irregular. */
+	/** Lloyd relaxation passes: more = rounder, more even (honeycomb-like) blocks; 0 keeps the flow field's shape. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Layout", meta = (ClampMin = "0", ClampMax = "10"))
-	int32 RelaxIterations = 1;
+	int32 RelaxIterations = 0;
+
+	/** Tensor-field style layout: blocks and streets follow a smooth curving flow field. 0 = plain random Voronoi. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Flow Field", meta = (ClampMin = "0", ClampMax = "1"))
+	float FlowStrength = 1.0f;
+
+	/** Main direction of the flow, in degrees. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Flow Field")
+	float FlowDirection = 20.0f;
+
+	/** How strongly the flow bends (radians). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Flow Field", meta = (ClampMin = "0", ClampMax = "3"))
+	float FlowCurl = 0.8f;
+
+	/** Size of the bends (cm). Bigger = long sweeping curves. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Flow Field", meta = (ClampMin = "1000"))
+	float FlowScale = 60000.0f;
+
+	/** Blocks are this many times longer along the flow than across it. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Flow Field", meta = (ClampMin = "1", ClampMax = "4"))
+	float FlowElongation = 1.7f;
+
+	/** Share of outskirts streets removed by noise (blocks merge into bigger plots). Downtown stays dense; the network stays connected. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Road Thinning", meta = (ClampMin = "0", ClampMax = "1"))
+	float RoadThinning = 0.45f;
+
+	/** Inside this fraction of the city radius no streets are removed. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Road Thinning", meta = (ClampMin = "0", ClampMax = "1"))
+	float ThinningInnerRadius = 0.3f;
 
 	/** How much the streets bend. 0 = straight streets. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Layout", meta = (ClampMin = "0", ClampMax = "1"))
@@ -140,9 +168,34 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Roads")
 	TObjectPtr<UMaterialInterface> GroundMaterial;
 
-	/** Extra gap between the road edge and the block content. */
+	/** Sidewalk width between the road edge and the block content. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Roads", meta = (ClampMin = "0"))
-	float BlockMargin = 300.0f;
+	float BlockMargin = 450.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Sidewalks")
+	bool bGenerateSidewalks = true;
+
+	/** Sidewalk strip mesh (default: engine cube, scaled per strip). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Sidewalks")
+	TObjectPtr<UStaticMesh> SidewalkMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Sidewalks")
+	TObjectPtr<UMaterialInterface> SidewalkMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Sidewalks", meta = (ClampMin = "1"))
+	float SidewalkHeight = 15.0f;
+
+	/** Walking loops through parks (ZoneGraph crowd lanes) that pedestrians use, with benches placed beside them by PCG. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Parks")
+	bool bGenerateParkPaths = true;
+
+	/** How far inside the park edge the walking loop runs (cm). */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Parks", meta = (ClampMin = "0"))
+	float ParkPathInset = 500.0f;
+
+	/** Bit 22 = "SmartObjects" lanes (MassSmartObjectSettings), so crowd agents look for benches along them. */
+	UPROPERTY(EditAnywhere, Category = "City|Parks")
+	FZoneGraphTagMask ParkLaneTags = FZoneGraphTagMask(1u << 22);
 
 	// ---- Mass AI lanes ----
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Lanes")
@@ -156,7 +209,7 @@ public:
 
 	/** Distance from the street centre line to the sidewalk lane. */
 	UPROPERTY(EditAnywhere, Category = "City|Lanes")
-	float SidewalkOffset = 480.0f;
+	float SidewalkOffset = 800.0f;
 
 	// Tags match the lane filters in Config/DefaultPlugins.ini (MassTrafficSettings / MassCrowdSettings).
 	UPROPERTY(EditAnywhere, Category = "City|Lanes")
@@ -177,21 +230,29 @@ public:
 	TArray<FCityBuildingStyle> BuildingStyles;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Buildings", meta = (ClampMin = "1"))
-	int32 MinFloors = 2;
+	int32 MinFloors = 3;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Buildings", meta = (ClampMin = "1"))
-	int32 MaxFloors = 28;
+	int32 MaxFloors = 14;
 
 	/** 0 = heights random everywhere, 1 = towers only downtown (city centre), low-rise at the edges. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Buildings", meta = (ClampMin = "0", ClampMax = "1"))
 	float DowntownStrength = 0.8f;
 
-	/** Building frontage and depth, in facade modules. */
+	/** Blocks are split into lots no larger than a random size in this range (cm). Smaller = more, narrower buildings. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Buildings")
-	FIntPoint WidthModules = FIntPoint(3, 6);
+	FVector2D LotSize = FVector2D(3000.0, 6000.0);
+
+	/** Random gap between neighbouring buildings (cm). 0 = buildings touch, like a dense downtown. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Buildings")
+	FVector2D LotGap = FVector2D(0.0, 250.0);
+
+	/** Chance that a lot stays open as a small green patch with trees. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Buildings", meta = (ClampMin = "0", ClampMax = "1"))
+	float GreenLotChance = 0.04f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Buildings")
-	FIntPoint DepthModules = FIntPoint(3, 6);
+	TObjectPtr<UStaticMesh> TreeMesh;
 
 	/** Flat roof cap, scaled to the footprint (default: engine cube). */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Buildings")
@@ -210,6 +271,10 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Performance")
 	bool bUseLumenBuildingProxies = true;
+
+	/** What reflections and bounce light "see" on the proxy boxes. Empty = the first building style's wall material. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Performance")
+	TObjectPtr<UMaterialInterface> LumenProxyMaterial;
 
 	/** Small building details (trims, pillars) disappear beyond this distance. 0 = never. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "City|Performance", meta = (ClampMin = "0"))
@@ -234,6 +299,7 @@ private:
 	void AddIntersection(const FVector& Center, float Radius);
 	void AddBlock(const TArray<FVector2d>& Polygon, FName TypeTag);
 	void AddBuildings(const TArray<FVector2d>& Block, FRandomStream& Rand);
+	void AddBuildingBox(const FCityBuildingStyle& Style, const FVector2d& Origin, const FVector2d& T, const FVector2d& N, int32 WMods, int32 DMods, int32 Floors);
 	void AddInstance(UStaticMesh* Mesh, const FTransform& Transform);
 
 	/** One instanced component per mesh, rebuilt on every generate. */
@@ -241,4 +307,7 @@ private:
 
 	/** Invisible building boxes that only feed Lumen and distance fields. */
 	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> LumenProxies;
+
+	/** Sidewalk strips get their own component so they can share the cube mesh with roofs but use their own material. */
+	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> SidewalkStrips;
 };
